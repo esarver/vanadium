@@ -18,13 +18,13 @@ enum VanadiumErrors {
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
-struct Cli {
+struct Args {
     /// The file to open in the editor
     file: PathBuf,
 }
 
 fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+    let cli = Args::parse();
 
     let contents = fs::read_to_string(cli.file)?;
 
