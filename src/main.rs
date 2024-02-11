@@ -78,7 +78,6 @@ fn main() -> anyhow::Result<()> {
             let area = frame.size();
             frame.render_widget(Paragraph::new(contents.clone()), area);
             frame.set_cursor(app.cursor.x, app.cursor.y);
-            
         })?;
 
         if event::poll(std::time::Duration::from_millis(16))? {
