@@ -23,6 +23,41 @@ struct Args {
     file: PathBuf,
 }
 
+enum Mode {
+    Normal,
+    Insert,
+    Replace,
+    Command,
+}
+
+struct Cursor {
+    x: u16,
+    y: u16,
+}
+
+impl Cursor {
+    fn move_up(&mut self, n: u16) {
+        self.y = self.y.saturating_sub(n);
+    }
+
+    fn move_down(&mut self, n: u16) {
+        self.y = self.y.saturating_add(n);
+    }
+
+    fn move_right(&mut self, n: u16) {
+        self.x = self.x.saturating_add(n);
+    }
+
+    fn move_left(&mut self, n: u16) {
+        self.x = self.x.saturating_sub(n);
+    }
+}
+
+struct App {
+    pub cursor: Cursor,
+    pub mode: Mode,
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Args::parse();
 
@@ -33,16 +68,37 @@ fn main() -> anyhow::Result<()> {
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
     terminal.clear()?;
 
+    let mut app = App {
+        cursor: Cursor { x: 0, y: 0 },
+        mode: Mode::Normal,
+    };
+
     'app_loop: loop {
         terminal.draw(|frame| {
             let area = frame.size();
             frame.render_widget(Paragraph::new(contents.clone()), area);
+            frame.set_cursor(app.cursor.x, app.cursor.y);
+            
         })?;
 
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                    break 'app_loop;
+                match app.mode {
+                    Mode::Normal if key.kind == KeyEventKind::Press => match key.code {
+                        KeyCode::Char('q') => break 'app_loop,
+                        KeyCode::Char('k') => app.cursor.move_up(1),
+                        KeyCode::Char('j') => app.cursor.move_down(1),
+                        KeyCode::Char('l') => app.cursor.move_right(1),
+                        KeyCode::Char('h') => app.cursor.move_left(1),
+                        KeyCode::Char('i') => app.mode = Mode::Insert,
+                        KeyCode::Char('r') => app.mode = Mode::Replace,
+                        KeyCode::Char(':') => app.mode = Mode::Command,
+                        _ => {}
+                    },
+                    Mode::Insert if key.kind == KeyEventKind::Press => {}
+                    Mode::Replace if key.kind == KeyEventKind::Press => {}
+                    Mode::Command if key.kind == KeyEventKind::Press => {}
+                    _ => {}
                 }
             }
         }
