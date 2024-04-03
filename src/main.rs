@@ -89,8 +89,7 @@ impl App<'_> {
             .viewer
             .document
             .contents
-            .iter()
-            .nth(self.cursor.y as usize)
+            .get(self.cursor.y as usize)
             .unwrap_or(&"")
             .len();
         self.cursor.move_right(0, line_len as u16);
@@ -102,8 +101,7 @@ impl App<'_> {
             .viewer
             .document
             .contents
-            .iter()
-            .nth(self.cursor.y as usize)
+            .get(self.cursor.y as usize)
             .unwrap_or(&"")
             .len();
         self.cursor.move_right(0, line_len as u16);
@@ -113,8 +111,7 @@ impl App<'_> {
             .viewer
             .document
             .contents
-            .iter()
-            .nth(self.cursor.y as usize)
+            .get(self.cursor.y as usize)
             .unwrap_or(&"")
             .len();
         self.cursor.move_right(n, line_len as u16);
@@ -124,8 +121,7 @@ impl App<'_> {
             .viewer
             .document
             .contents
-            .iter()
-            .nth(self.cursor.y as usize)
+            .get(self.cursor.y as usize)
             .unwrap_or(&"")
             .len();
         self.cursor.move_left(n, line_len as u16);
