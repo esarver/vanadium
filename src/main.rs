@@ -61,6 +61,16 @@ struct Document<'a> {
     pub contents: Vec<&'a str>,
 }
 
+impl Document<'_> {
+    pub fn line_length(&self, line_number: usize) -> usize {
+        if let Some(line) = self.contents.get(line_number) {
+            line.len()
+        } else {
+            0
+        }
+    }
+}
+
 struct DocumentViewer<'a> {
     pub document: &'a Document<'a>,
 }
@@ -86,45 +96,21 @@ impl App<'_> {
     fn move_cursor_up(&mut self, n: u16) {
         let num_lines = self.viewer.document.contents.len();
         self.cursor.move_up(n, num_lines as u16);
-        let line_len = self
-            .viewer
-            .document
-            .contents
-            .get(self.cursor.y as usize)
-            .unwrap_or(&"")
-            .len();
+        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
         self.cursor.move_right(0, line_len as u16);
     }
     fn move_cursor_down(&mut self, n: u16) {
         let num_lines = self.viewer.document.contents.len();
         self.cursor.move_down(n, num_lines as u16);
-        let line_len = self
-            .viewer
-            .document
-            .contents
-            .get(self.cursor.y as usize)
-            .unwrap_or(&"")
-            .len();
+        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
         self.cursor.move_right(0, line_len as u16);
     }
     fn move_cursor_right(&mut self, n: u16) {
-        let line_len = self
-            .viewer
-            .document
-            .contents
-            .get(self.cursor.y as usize)
-            .unwrap_or(&"")
-            .len();
+        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
         self.cursor.move_right(n, line_len as u16);
     }
     fn move_cursor_left(&mut self, n: u16) {
-        let line_len = self
-            .viewer
-            .document
-            .contents
-            .get(self.cursor.y as usize)
-            .unwrap_or(&"")
-            .len();
+        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
         self.cursor.move_left(n, line_len as u16);
     }
 }
