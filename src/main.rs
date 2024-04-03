@@ -10,7 +10,6 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     text::{Line, Text},
-    widgets::Paragraph,
     Terminal,
 };
 use thiserror::Error;
@@ -41,45 +40,73 @@ struct Cursor {
 }
 
 impl Cursor {
-    fn move_up(&mut self, n: u16, upper_bound: u16) {
-        self.y = self.y.saturating_sub(n).clamp(0, upper_bound);
+    fn move_up(&mut self, n: u16, max_y: u16) {
+        self.y = self.y.saturating_sub(n).clamp(0, max_y);
     }
 
-    fn move_down(&mut self, n: u16, upper_bound: u16) {
-        self.y = self.y.saturating_add(n).clamp(0, upper_bound);
+    fn move_down(&mut self, n: u16, max_y: u16) {
+        self.y = self.y.saturating_add(n).clamp(0, max_y);
     }
 
-    fn move_right(&mut self, n: u16, upper_bound: u16) {
-        self.x = self.x.saturating_add(n).clamp(0, upper_bound);
+    fn move_right(&mut self, n: u16, max_x: u16) {
+        self.x = self.x.saturating_add(n).clamp(0, max_x);
     }
 
-    fn move_left(&mut self, n: u16, upper_bound: u16) {
-        self.x = self.x.saturating_sub(n).clamp(0, upper_bound);
+    fn move_left(&mut self, n: u16, max_x: u16) {
+        self.x = self.x.saturating_sub(n).clamp(0, max_x);
     }
 }
 
-struct Document {
-    pub contents: Vec<String>,
+struct Document<'a> {
+    pub contents: Vec<&'a str>,
 }
 
 struct DocumentViewer<'a> {
-    pub document: &'a Document,
+    pub document: &'a Document<'a>,
 }
 
-struct App {
+impl DocumentViewer<'_> {
+    fn get_text(&self) -> Text {
+        let mut text = Text::default();
+        for line in self.document.contents.clone().into_iter() {
+            text.lines.push(Line::raw(line));
+        }
+        text
+    }
+}
+
+struct App<'a> {
     pub cursor: Cursor,
     pub mode: Mode,
-    pub viewer: DocumentViewer,
+    pub viewer: DocumentViewer<'a>,
 }
 
-impl App {
+impl App<'_> {
     fn move_cursor_up(&mut self, n: u16) {
         let num_lines = self.viewer.document.contents.len();
-        self.cursor.move_up(n, num_lines);
+        self.cursor.move_up(n, num_lines as u16);
+        let line_len = self
+            .viewer
+            .document
+            .contents
+            .iter()
+            .nth(self.cursor.y as usize)
+            .unwrap_or(&"")
+            .len();
+        self.cursor.move_right(0, line_len as u16);
     }
     fn move_cursor_down(&mut self, n: u16) {
         let num_lines = self.viewer.document.contents.len();
-        self.cursor.move_down(n, upper_bound);
+        self.cursor.move_down(n, num_lines as u16);
+        let line_len = self
+            .viewer
+            .document
+            .contents
+            .iter()
+            .nth(self.cursor.y as usize)
+            .unwrap_or(&"")
+            .len();
+        self.cursor.move_right(0, line_len as u16);
     }
     fn move_cursor_right(&mut self, n: u16) {
         let line_len = self
@@ -87,10 +114,10 @@ impl App {
             .document
             .contents
             .iter()
-            .nth(self.cursor.y)
-            .unwrap_or(&"".to_string())
+            .nth(self.cursor.y as usize)
+            .unwrap_or(&"")
             .len();
-        self.cursor.move_right(n, line_len);
+        self.cursor.move_right(n, line_len as u16);
     }
     fn move_cursor_left(&mut self, n: u16) {
         let line_len = self
@@ -98,10 +125,10 @@ impl App {
             .document
             .contents
             .iter()
-            .nth(self.cursor.y)
-            .unwrap_or(&"".to_string())
+            .nth(self.cursor.y as usize)
+            .unwrap_or(&"")
             .len();
-        self.cursor.move_left(n, line_len);
+        self.cursor.move_left(n, line_len as u16);
     }
 }
 
@@ -129,8 +156,7 @@ fn main() -> anyhow::Result<()> {
     'app_loop: loop {
         terminal.draw(|frame| {
             let area = frame.size();
-            let document: Vec<Line> = app.viewer.document.contents.map(Line::raw).collect();
-            frame.render_widget(Text::from(document), area);
+            frame.render_widget(app.viewer.get_text(), area);
             // frame.render_widget(Paragraph::new(contents.clone()), area);
             frame.set_cursor(app.cursor.x, app.cursor.y);
         })?;
