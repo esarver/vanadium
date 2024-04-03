@@ -82,6 +82,7 @@ struct App<'a> {
 }
 
 impl App<'_> {
+    //TODO: Keep cursor position, but clamp location to end of line
     fn move_cursor_up(&mut self, n: u16) {
         let num_lines = self.viewer.document.contents.len();
         self.cursor.move_up(n, num_lines as u16);
