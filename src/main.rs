@@ -1,6 +1,6 @@
 use std::{fs, io::stdout, path::PathBuf};
 
-use bevy_ecs::world::World;
+use bevy_ecs::{schedule::Schedule, world::World};
 use clap::Parser;
 
 use crossterm::{
@@ -92,43 +92,32 @@ struct Vanadium {
 }
 
 impl Vanadium {
-    //TODO: Keep cursor position, but clamp location to end of line
-//    fn move_cursor_up(&mut self, n: u16) {
-//        let num_lines = self.viewer.document.contents.len();
-//        self.cursor.move_up(n, num_lines as u16);
-//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-//        self.cursor.move_right(0, line_len as u16);
-//    }
-//    fn move_cursor_down(&mut self, n: u16) {
-//        let num_lines = self.viewer.document.contents.len();
-//        self.cursor.move_down(n, num_lines as u16);
-//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-//        self.cursor.move_right(0, line_len as u16);
-//    }
-//    fn move_cursor_right(&mut self, n: u16) {
-//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-//        self.cursor.move_right(n, line_len as u16);
-//    }
-//    fn move_cursor_left(&mut self, n: u16) {
-//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-//        self.cursor.move_left(n, line_len as u16);
-//    }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-    fn run(self) -> anyhow::Result<()> {
+    fn run(mut self) -> anyhow::Result<()> {
+        let mut schedule = Schedule::default();
         stdout().execute(EnterAlternateScreen)?;
         enable_raw_mode()?;
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
         terminal.clear()?;
-        //'app_loop: loop {
-        //    terminal.draw(|frame| {
-        //        let _area = frame.size();
-        //    })?;
 
-        //    if event::poll(std::time::Duration::from_millis(16))? {
-        //        if let event::Event::Key(key) = event::read()? {
-        //        }
-        //    }
-        //}
+        'app_loop: loop {
+            schedule.run(&mut self.world);
+            terminal.draw(|frame| {
+                let _area = frame.size();
+            })?;
+
+            if event::poll(std::time::Duration::from_millis(16))? {
+                if let event::Event::Key(key) = event::read()? {
+                    match key.code {
+                        KeyCode::Char('q') | KeyCode::Esc => break 'app_loop,
+                        _ => {}
+                    }
+                }
+            }
+        }
         stdout().execute(LeaveAlternateScreen)?;
         disable_raw_mode()?;
         Ok(())
