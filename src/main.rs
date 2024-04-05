@@ -1,5 +1,6 @@
 use std::{fs, io::stdout, path::PathBuf};
 
+use bevy_ecs::world::World;
 use clap::Parser;
 
 use crossterm::{
@@ -85,33 +86,52 @@ impl DocumentViewer<'_> {
     }
 }
 
-struct App<'a> {
-    pub cursor: Cursor,
-    pub mode: Mode,
-    pub viewer: DocumentViewer<'a>,
+#[derive(Default)]
+struct Vanadium {
+    world: World,
 }
 
-impl App<'_> {
+impl Vanadium {
     //TODO: Keep cursor position, but clamp location to end of line
-    fn move_cursor_up(&mut self, n: u16) {
-        let num_lines = self.viewer.document.contents.len();
-        self.cursor.move_up(n, num_lines as u16);
-        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-        self.cursor.move_right(0, line_len as u16);
-    }
-    fn move_cursor_down(&mut self, n: u16) {
-        let num_lines = self.viewer.document.contents.len();
-        self.cursor.move_down(n, num_lines as u16);
-        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-        self.cursor.move_right(0, line_len as u16);
-    }
-    fn move_cursor_right(&mut self, n: u16) {
-        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-        self.cursor.move_right(n, line_len as u16);
-    }
-    fn move_cursor_left(&mut self, n: u16) {
-        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
-        self.cursor.move_left(n, line_len as u16);
+//    fn move_cursor_up(&mut self, n: u16) {
+//        let num_lines = self.viewer.document.contents.len();
+//        self.cursor.move_up(n, num_lines as u16);
+//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
+//        self.cursor.move_right(0, line_len as u16);
+//    }
+//    fn move_cursor_down(&mut self, n: u16) {
+//        let num_lines = self.viewer.document.contents.len();
+//        self.cursor.move_down(n, num_lines as u16);
+//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
+//        self.cursor.move_right(0, line_len as u16);
+//    }
+//    fn move_cursor_right(&mut self, n: u16) {
+//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
+//        self.cursor.move_right(n, line_len as u16);
+//    }
+//    fn move_cursor_left(&mut self, n: u16) {
+//        let line_len = self.viewer.document.line_length(self.cursor.y as usize);
+//        self.cursor.move_left(n, line_len as u16);
+//    }
+
+    fn run(self) -> anyhow::Result<()> {
+        stdout().execute(EnterAlternateScreen)?;
+        enable_raw_mode()?;
+        let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
+        terminal.clear()?;
+        //'app_loop: loop {
+        //    terminal.draw(|frame| {
+        //        let _area = frame.size();
+        //    })?;
+
+        //    if event::poll(std::time::Duration::from_millis(16))? {
+        //        if let event::Event::Key(key) = event::read()? {
+        //        }
+        //    }
+        //}
+        stdout().execute(LeaveAlternateScreen)?;
+        disable_raw_mode()?;
+        Ok(())
     }
 }
 
@@ -120,55 +140,12 @@ fn main() -> anyhow::Result<()> {
 
     let contents = fs::read_to_string(cli.file)?;
 
-    stdout().execute(EnterAlternateScreen)?;
-    enable_raw_mode()?;
-    let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-    terminal.clear()?;
-
-    let document: Document = Document {
+    let _document: Document = Document {
         contents: contents.lines().collect(),
     };
-    let mut app = App {
-        cursor: Cursor { x: 0, y: 0 },
-        mode: Mode::Normal,
-        viewer: DocumentViewer {
-            document: &document,
-        },
-    };
+    let app = Vanadium::default();
 
-    'app_loop: loop {
-        terminal.draw(|frame| {
-            let area = frame.size();
-            frame.render_widget(app.viewer.get_text(), area);
-            // frame.render_widget(Paragraph::new(contents.clone()), area);
-            frame.set_cursor(app.cursor.x, app.cursor.y);
-        })?;
-
-        if event::poll(std::time::Duration::from_millis(16))? {
-            if let event::Event::Key(key) = event::read()? {
-                match app.mode {
-                    Mode::Normal if key.kind == KeyEventKind::Press => match key.code {
-                        KeyCode::Char('q') => break 'app_loop,
-                        KeyCode::Char('k') => app.move_cursor_up(1),
-                        KeyCode::Char('j') => app.move_cursor_down(1),
-                        KeyCode::Char('l') => app.move_cursor_right(1),
-                        KeyCode::Char('h') => app.move_cursor_left(1),
-                        KeyCode::Char('i') => app.mode = Mode::Insert,
-                        KeyCode::Char('r') => app.mode = Mode::Replace,
-                        KeyCode::Char(':') => app.mode = Mode::Command,
-                        _ => {}
-                    },
-                    Mode::Insert if key.kind == KeyEventKind::Press => {}
-                    Mode::Replace if key.kind == KeyEventKind::Press => {}
-                    Mode::Command if key.kind == KeyEventKind::Press => {}
-                    _ => {}
-                }
-            }
-        }
-    }
-
-    stdout().execute(LeaveAlternateScreen)?;
-    disable_raw_mode()?;
+    app.run()?;
 
     Ok(())
 }
