@@ -8,7 +8,9 @@ edition = "2018"
 
 [dependencies]
 anyhow = { version = "1.0.79", features = ["backtrace"] }
-bevy_ecs = { version = "0.13.1", features = ["multi-threaded", "trace"] }
+bevy_app = "0.13.2"
+bevy_core = "0.13.2"
+bevy_ecs = { version = "0.13.2", features = ["multi-threaded"] }
 clap = { version = "4.5.0", features = ["derive", "string", "wrap_help"] }
 crossterm = "0.27.0"
 ratatui = { version = "0.26.0", features = ["all-widgets", "macros"] }
