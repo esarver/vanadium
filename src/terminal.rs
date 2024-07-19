@@ -57,7 +57,7 @@ pub fn poll_input_keys(mut event_writer: EventWriter<AppExit>) {
         if let crossterm::event::Event::Key(key) = crossterm::event::read().unwrap() {
             match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => {
-                    event_writer.send(AppExit);
+                    event_writer.send(AppExit::Success);
                 }
                 _ => {}
             };

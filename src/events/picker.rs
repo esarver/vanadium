@@ -1,4 +1,4 @@
-use bevy_ecs::entity::Entity;
+use bevy_ecs::{event::Event,entity::Entity};
 
 
 #[derive(Debug, Event)]

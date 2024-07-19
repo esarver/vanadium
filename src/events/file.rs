@@ -4,4 +4,4 @@ use bevy_ecs::{event::Event, system::Commands};
 
 
 #[derive(Debug, Event)]
-pub struct OpenFile(PathBuf);
+pub struct Open(PathBuf);
